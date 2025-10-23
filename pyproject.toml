@@ -1,0 +1,16 @@
+[project]
+name = "your-friend"
+version = "0.1.0"
+description = "AI-powered personal assistant web app"
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "argon2-cffi>=23.1.0",
+    "cryptography>=42.0.0",
+    "fastapi[all]>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "sqlalchemy>=2.0.44",
+    "psycopg2-binary>=2.9.9",
+    "python-jose[cryptography]>=3.3.0",
+]
