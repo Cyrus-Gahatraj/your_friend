@@ -19,16 +19,17 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, nullable=False)
-    email = Column(String, unique=True)
+    email = Column(String, unique=True, nullable=False)
     country = Column(String)
     password = Column(String)
-    relationship_status = Column(Enum(RelationshipType), default=RelationshipType.friend)
     created_at = Column(DateTime, default=datetime.utcnow)
     last_login = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
 
     messages_sent = relationship("Message", foreign_keys="[Message.sender_id]", back_populates="sender")
     messages_received = relationship("Message", foreign_keys="[Message.receiver_id]", back_populates="receiver")
+
+    relationships = relationship("Relationship", foreign_keys="[Relationship.user_id]", back_populates="user")
 
 class Relationship(Base):
     __tablename__ = "relationships"
@@ -38,7 +39,10 @@ class Relationship(Base):
     friend_id = Column(Integer, ForeignKey("users.id"))
     type = Column(Enum(RelationshipType))
     status = Column(Enum(RelationshipStatus), default=RelationshipStatus.pending)
+    ai_persona = Column(String, default="default_ai") 
     created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", foreign_keys=[user_id], back_populates="relationships")
 
 class Message(Base):
     __tablename__ = "messages"
@@ -51,6 +55,8 @@ class Message(Base):
     voice_file = Column(String, nullable=True)
     timestamp = Column(DateTime, default=datetime.utcnow)
     is_read = Column(Boolean, default=False)
+    is_ai = Column(Boolean, default=False)
+    meta_data = Column(JSON, nullable=True)
 
     sender = relationship("User", foreign_keys=[sender_id], back_populates="messages_sent")
     receiver = relationship("User", foreign_keys=[receiver_id], back_populates="messages_received")

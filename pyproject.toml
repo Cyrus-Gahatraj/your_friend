@@ -13,4 +13,9 @@ dependencies = [
     "sqlalchemy>=2.0.44",
     "psycopg2-binary>=2.9.9",
     "python-jose[cryptography]>=3.3.0",
+    "langchain>=1.0.2",
+    "langchain-community>=0.4",
+    "langchain-groq>=1.0.0",
+    "chroma>=0.2.0",
+    "langchain-core>=1.0.1",
 ]
