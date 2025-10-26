@@ -18,4 +18,6 @@ dependencies = [
     "langchain-groq>=1.0.0",
     "chroma>=0.2.0",
     "langchain-core>=1.0.1",
+    "sentence-transformers>=5.1.2",
+    "chromadb>=1.2.1",
 ]

@@ -1,22 +1,26 @@
 from datetime import datetime
 from pydantic import BaseModel
+from sentence_transformers import SentenceTransformer
 from langchain_core.prompts import ChatPromptTemplate, FewShotChatMessagePromptTemplate
-from langchain_core.output_parsers import PydanticOutputParser
-from langchain_core.chat_history import InMemoryChatMessageHistory
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_groq import ChatGroq
 from sqlalchemy.orm import Session
 from app.models import models
 from .config import settings
+from .history import get_session_history
 import json, os
+import chromadb
+from langchain_core.messages import AIMessage, HumanMessage
 
 GROQ_API_KEY = settings.groq_api_key
+embedding_model = SentenceTransformer('intfloat/e5-small-v2')
 
+VECTOR_STORE_DIR = os.path.abspath("./vector_store")
+os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
 
-class Message(BaseModel):
-    current_time: datetime
-    text: str
-
+chroma_client = chromadb.PersistentClient(path=VECTOR_STORE_DIR)
+chat_collection = chroma_client.get_or_create_collection(name="chat_memory")
 
 class AIChatSession:
     def __init__(self, db: Session, session_id: str, user_id: int, persona_name: str = "Alice"):
@@ -30,12 +34,7 @@ class AIChatSession:
             raise ValueError(f"User ID {user_id} not found in DB")
 
         self.ai_user = self._get_or_create_ai_user()
-
         self.persona = self._load_persona(persona_name)
-
-        self.parser = PydanticOutputParser(pydantic_object=Message)
-
-        self.memory_store = {}
 
         examples = self.persona.get("example_message", [])
         example_prompt = ChatPromptTemplate.from_messages([
@@ -47,14 +46,19 @@ class AIChatSession:
             examples=examples
         )
 
-        self.pydantic_prompt = ChatPromptTemplate.from_messages([
-            ("system", (self.persona.get("system", "")).replace("#USERNAME", self.user.username)),
+        self.prompt = ChatPromptTemplate.from_messages([
+            ("system", f"""
+            {self.persona.get("system", "").replace("#USERNAME", self.user.username)}
+            
+            You are {persona_name} talking to {self.user.username}. 
+            Current time: {datetime.now()}
+            
+            IMPORTANT: Respond naturally in conversation. Do NOT use JSON format.
+            Use your personality and remember previous conversations.
+            """),
             few_shot_prompt,
-            ("human", "Format={format_instructions}\nTime={time}\nInput={input}")
-        ]).partial(
-            format_instructions=self.parser.get_format_instructions(),
-            time=datetime.now()
-        )
+            ("human", "{input}")
+        ])
 
         self.chat_model = ChatGroq(
             model="llama-3.3-70b-versatile",
@@ -62,30 +66,30 @@ class AIChatSession:
             api_key=GROQ_API_KEY
         )
 
-        self.model_with_memory = RunnableWithMessageHistory(
-            self.chat_model,
-            lambda: self._get_session_history(self.session_id)
+        base_chain = self.prompt | self.chat_model | StrOutputParser()
+
+        self.chain = RunnableWithMessageHistory(
+            base_chain,
+            lambda session_id: get_session_history(
+                session_id, self.db, self.user_id, self.ai_user.id
+            ),
+            input_messages_key="input",
+            history_messages_key="history",
         )
 
-        self.memory_chain = self.pydantic_prompt | self._to_messages | self.model_with_memory | self.parser
-
     def _get_or_create_ai_user(self):
-        """Get or create the AI system user"""
         ai_user = self.db.query(models.User).filter(models.User.username == "AI_System").first()
         if not ai_user:
             ai_user = models.User(
                 username="AI_System",
                 email="ai_system@yourapp.com",
                 country="AI",
-                password="",  
+                password="",
                 is_active=True
             )
             self.db.add(ai_user)
             self.db.commit()
             self.db.refresh(ai_user)
-            print(f"Created AI system user with ID: {ai_user.id}")
-        else:
-            print(f"Using existing AI system user with ID: {ai_user.id}")
         return ai_user
 
     def _load_persona(self, name: str):
@@ -95,77 +99,97 @@ class AIChatSession:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
 
-    def _get_session_history(self, session_id: str):
-        """Get chat memory for this session"""
-        if session_id not in self.memory_store:
-            self.memory_store[session_id] = InMemoryChatMessageHistory()
-        return self.memory_store[session_id]
-
-    def _to_messages(self, chat_prompt_value):
-        """Ensure the Groq model receives proper BaseMessage[] list"""
-        return chat_prompt_value.messages if hasattr(chat_prompt_value, "messages") else chat_prompt_value
-
-    def _save_message(self, sender_id, receiver_id, content, is_ai=False):
-        """Save message in DB"""
-        msg = models.Message(
-            sender_id=sender_id,
-            receiver_id=receiver_id,
-            content=content,
-            timestamp=datetime.utcnow(),
-            is_ai=is_ai
-        )
-        self.db.add(msg)
-        self.db.commit()
-        self.db.refresh(msg)
-        return msg
-
-    def _load_recent_messages(self, limit=10):
-        """Fetch recent messages for user"""
-        return (
-            self.db.query(models.Message)
-            .filter(
-                (models.Message.sender_id == self.user_id) |
-                (models.Message.receiver_id == self.user_id)
+    def _embed_and_store(self, message_id: str, text: str, metadata: dict):
+        """Create vector embedding and store persistently in ChromaDB"""
+        try:
+            vector = embedding_model.encode(text).tolist()
+            chat_collection.add(
+                documents=[text],
+                embeddings=[vector],
+                metadatas=[{
+                    **metadata,
+                    "timestamp": datetime.utcnow().isoformat(),
+                    "user_id": self.user_id
+                }],
+                ids=[message_id]
             )
-            .order_by(models.Message.timestamp.desc())
-            .limit(limit)
-            .all()
-        )
+        except Exception as e:
+            print(f"Error storing in vector DB: {e}")
+
+    def _search_relevant_messages(self, query_text: str, top_k=3):
+        """Find similar messages using ChromaDB"""
+        try:
+            query_vector = embedding_model.encode(query_text).tolist()
+            results = chat_collection.query(
+                query_embeddings=[query_vector],
+                n_results=top_k,
+                where={"session_id": self.session_id},
+                include=["documents", "metadatas"]
+            )
+            
+            if results and "documents" in results and results["documents"][0]:
+                relevant_docs = []
+                for doc, metadata in zip(results["documents"][0], results["metadatas"][0]):
+                    role = metadata.get('role', 'user')
+                    relevant_docs.append(f"{role}: {doc}")
+                return relevant_docs
+            return []
+        except Exception as e:
+            print(f"Error searching relevant messages: {e}")
+            return []
 
     def send_message(self, user_input: str):
-        """Send user message, get AI response, save both"""
-        user_msg = self._save_message(
-            sender_id=self.user_id,
-            receiver_id=self.ai_user.id,
-            content=user_input,
-            is_ai=False
+        """Send message, get AI response, and automatically store history."""
+        context_messages = self._search_relevant_messages(user_input)
+        
+        enhanced_input = user_input
+        if context_messages:
+            context_text = "\n".join(context_messages[-2:])
+            enhanced_input = f"Previous context:\n{context_text}\n\nCurrent message: {user_input}"
+
+        try:
+            config = {"configurable": {"session_id": self.session_id}}
+            ai_response_text = self.chain.invoke({"input": enhanced_input}, config=config)
+            print(f"✅ AI Response: {ai_response_text}")
+            
+        except Exception as e:
+            print(f"Error in AI chain: {e}")
+            ai_response_text = f"Oh, that's an interesting question! I'm not sure how to answer that yet. Let's talk about something else!"
+
+        history = get_session_history(self.session_id, self.db, self.user_id, self.ai_user.id)
+        user_msg_db = history.messages[-2]
+        ai_msg_db = history.messages[-1]
+
+        self._embed_and_store(
+            str(user_msg_db.id),
+            user_input,
+            {"role": "user", "session_id": self.session_id, "persona": self.persona_name}
         )
-
-        config = {"configurable": {"session_id": self.session_id}}
-        response = self.memory_chain.invoke({"input": user_input}, config=config)
-
-        ai_msg = self._save_message(
-            sender_id=self.ai_user.id,
-            receiver_id=self.user_id,
-            content=response.text,
-            is_ai=True
+        self._embed_and_store(
+            str(ai_msg_db.id),
+            ai_response_text,
+            {"role": "ai", "session_id": self.session_id, "persona": self.persona_name}
         )
 
         return {
-            "user_message": user_msg.content,
-            "ai_response": ai_msg.content,
-            "timestamp": ai_msg.timestamp
+            "user_message": user_input,
+            "ai_response": ai_response_text,
+            "timestamp": datetime.utcnow().isoformat()
         }
 
     def get_history(self, limit=20):
-        """Return recent chat history"""
-        msgs = self._load_recent_messages(limit)
-        return [
-            {
-                "id": m.id,
-                "from": "AI" if m.is_ai else self.user.username,
-                "content": m.content,
-                "timestamp": m.timestamp.isoformat()
-            }
-            for m in reversed(msgs)
-        ]
+        """Retrieves chat history from the database."""
+        history = get_session_history(self.session_id, self.db, self.user_id, self.ai_user.id)
+        messages = history.messages[-limit:]
+        
+        formatted_messages = []
+        for msg in messages:
+            role = "AI" if isinstance(msg, AIMessage) else self.user.username
+            # The id is now a string, so we don't need to call str() on it
+            formatted_messages.append({
+                "id": msg.id,
+                "from": role,
+                "content": msg.content,
+                "timestamp": datetime.utcnow().isoformat() # Timestamps from DB would be better
+            })
+        return formatted_messages
