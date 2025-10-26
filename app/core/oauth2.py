@@ -3,7 +3,7 @@ from fastapi import Depends, status, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from datetime import datetime, timedelta
 from app.models import models
-from app.schemas import user_schemas
+from app.schemas import token_schemas
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.config import settings
@@ -29,7 +29,7 @@ def verifty_access_token(token: str, credentials_exception):
 
         if not id:
             raise credentials_exception
-        token_data = user_schemas.TokenData(id=id)
+        token_data = token_schemas.TokenData(id=id)
     except JWTError:
         raise create_access_token
     
