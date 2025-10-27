@@ -40,8 +40,15 @@ def user_login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Sess
     access_token = oauth2.create_access_token(data={
          'user_id': str(user.id)
         })
+    refresh_token = oauth2.create_refresh_token(data={
+        'user_id': str(user.id)
+    })
     
-    return {'access_token': access_token, 'token_type': 'bearer'}
+    return token_schemas.Token(
+        access_token = access_token, 
+        refresh_token = refresh_token, 
+        token_type = "bearer"
+    )
 
 @router.post('/sign-up', status_code=status.HTTP_201_CREATED, response_model=user_schemas.UserBase)
 def create_user(user: user_schemas.UserCreate, db: Session = Depends(get_db)):
@@ -69,3 +76,25 @@ def create_user(user: user_schemas.UserCreate, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     return new_user
+
+@router.post("/refresh", response_model=token_schemas.Token)
+def refresh_token(req: token_schemas.RefreshTokenRequest, db: Session = Depends(get_db)):
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Invalid or expired refresh token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    token_data = oauth2.verify_refresh_token(req.refresh_token, credentials_exception)
+    user = db.query(models.User).filter(models.User.id == token_data.id).first()
+    if not user:
+        raise credentials_exception
+
+    access_token = oauth2.create_access_token({"user_id": user.id})
+    new_refresh_token = oauth2.create_refresh_token({"user_id": user.id})
+
+    return token_schemas.Token(
+        access_token = access_token, 
+        refresh_token = new_refresh_token, 
+        token_type = "bearer"
+    )
