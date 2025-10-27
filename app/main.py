@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, ai
+from app.routers import auth, ai, user
 from app.core.database import init_db
 
 init_db()
@@ -21,6 +21,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(ai.router)
+app.include_router(user.router)
 
 @app.get("/")
 def home():
