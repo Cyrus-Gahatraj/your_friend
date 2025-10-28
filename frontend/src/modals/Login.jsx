@@ -1,8 +1,13 @@
 import { useState } from "react";
 import BaseModal from "./BaseModal";
 import api from "../api";
+import { useAuth } from "../context/Auth";
+import { useNavigate } from "react-router-dom"; 
 
 const Login = ({ open, setOpen }) => {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -23,17 +28,17 @@ const Login = ({ open, setOpen }) => {
       const form = new FormData();
       form.append("username", formData.email);
       form.append("password", formData.password);
-      await api.post(endpoint, form, {
+      const response = await api.post(endpoint, form, {
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
-      console.log("Login successful!");
+      login(response.data.access_token, response.data.refresh_token);
+      navigate("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
     } finally {
       setFormData({ email: "", password: "" });
       setOpen(false);
     }
-
   };
 
   return (

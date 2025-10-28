@@ -1,0 +1,34 @@
+{
+  "personas": [
+    {
+      "id": 1,
+      "name": "Alice",
+      "avatar": "/avatars/alice.png"
+    },
+    {
+      "id": 2,
+      "name": "Ethan",
+      "avatar": "/avatars/ethan.png"
+    },
+    {
+      "id": 3,
+      "name": "Mira",
+      "avatar": "/avatars/mira.png"
+    },
+    {
+      "id": 4,
+      "name": "Nova",
+      "avatar": "/avatars/nova.png"
+    },
+    {
+      "id": 5,
+      "name": "Robert",
+      "avatar": "/avatars/robert.png"
+    },
+    {
+      "id": 6,
+      "name": "Sora",
+      "avatar": "/avatars/sora.png"
+    }
+  ]
+}

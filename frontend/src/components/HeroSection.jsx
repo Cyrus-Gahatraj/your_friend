@@ -16,7 +16,7 @@ const HeroSection = () => {
         </p>
         <div className="flex gap-3">
           <button className="px-4 py-2 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition" onClick={()=>setOpenSignup(true)}>
-            Get Started
+            Sign Up
           </button>
 
         <SignUp open={openSignup} setOpen={setOpenSignup} />
