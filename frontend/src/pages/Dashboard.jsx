@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Header from "../components/Header";
 import ChatSidebar from "../components/ChatSidebar";
 import ChatMessages from "../components/ChatMessages";
@@ -6,10 +6,18 @@ import ChatInputBox from "../components/ChatInputBox";
 
 export default function Dashboard() {
   const [selectedPersona, setSelectedPersona] = useState(null);
-  const [messages, setMessages] = useState({});
+
+  const [messages, setMessages] = useState(() => {
+    const saved = localStorage.getItem("chat_messages");
+    return saved ? JSON.parse(saved) : {};
+  });
+
   const [input, setInput] = useState("");
 
- 
+  useEffect(() => {
+    localStorage.setItem("chat_messages", JSON.stringify(messages));
+  }, [messages]);
+
   return (
     <div className="h-screen bg-gray-50 text-gray-800 flex flex-col">
       <Header />
@@ -36,6 +44,7 @@ export default function Dashboard() {
                 </h2>
               </div>
 
+             {/* Messages */}
               <ChatMessages messages={messages} selectedPersona={selectedPersona}/>
 
               {/* Input Box */}
