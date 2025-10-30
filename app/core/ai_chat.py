@@ -93,7 +93,7 @@ class AIChatSession:
         return ai_user
 
     def _load_persona(self, name: str):
-        path = os.path.join("app", "personas", f"{name.lower()}.json")
+        path = os.path.join("personas", f"{name.lower()}.json")
         if not os.path.exists(path):
             raise FileNotFoundError(f"Persona JSON not found at: {path}")
         with open(path, "r", encoding="utf-8") as f:
