@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, Enum, Foreign
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
-from app.core.database import Base
+from core.database import Base
 
 class RelationshipType(str, enum.Enum):
     friend = "friend"

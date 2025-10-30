@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth, ai, user
-from app.core.database import init_db
+from routers import auth, ai, user
+from core.database import init_db
 
 init_db()
 app = FastAPI()

@@ -20,4 +20,5 @@ dependencies = [
     "langchain-core>=1.0.1",
     "sentence-transformers>=5.1.2",
     "chromadb>=1.2.1",
+    "dotenv>=0.9.9",
 ]

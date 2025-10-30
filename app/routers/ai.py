@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from app.core.ai_chat import AIChatSession
-from app.core.database import get_db
-from app.core import oauth2
-from app.models import models
-from app.schemas import query_schemas
+from core.ai_chat import AIChatSession
+from core.database import get_db
+from core import oauth2
+from models import models
+from schemas import query_schemas
 
 router = APIRouter(prefix="/ai", tags=["AI Chat"])
 

@@ -6,7 +6,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_groq import ChatGroq
 from sqlalchemy.orm import Session
-from app.models import models
+from models import models
 from .config import settings
 from .history import get_session_history
 import json, os

@@ -1,7 +1,7 @@
 from typing import List
 from langchain_core.chat_history import BaseChatMessageHistory
 from langchain_core.messages import BaseMessage, AIMessage, HumanMessage
-from app.models import models
+from models import models
 from sqlalchemy.orm import Session
 
 def get_session_history(session_id: str, db: Session, user_id: int, ai_user_id: int) -> "DBChatMessageHistory":

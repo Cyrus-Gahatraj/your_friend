@@ -10,4 +10,4 @@ wheels/
 .venv
 .env
 
-/vector_store
+vector_store/
