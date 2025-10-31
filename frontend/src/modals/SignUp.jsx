@@ -1,6 +1,7 @@
 import {  useState } from "react";
 import BaseModal from "./BaseModal";
 import api from "../api";
+import { toast } from "react-toastify";
 
 const SignUp = ({ open, setOpen }) => {
   const [formData, setFormData] = useState({
@@ -23,8 +24,12 @@ const SignUp = ({ open, setOpen }) => {
     const endpoint = '/sign-up/'
     try {
        await api.post(endpoint, formData);
+       toast.success("Successfull signup. You can log-in now!");
     } catch(error) {
-        console.log(error)
+        const errorMessage =
+          error.response?.data?.message ||
+          "An unexpected error occurred during signup. Please check your details and try again.";
+        toast.error(`Error: ${errorMessage}`);
     } finally {
         setFormData({
             email: "",
