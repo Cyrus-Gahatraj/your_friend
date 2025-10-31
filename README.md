@@ -15,7 +15,7 @@ It’s built using **FastAPI**, **React**, **PostgreSQL**, **ChromaDB**, and **L
 - ⚡ **FastAPI Backend** with endpoints for auth, ai, and user
 - 🧩 **Vector-based Memory** for responses
 - 🧰 **Modern Dependency Management** using [uv](https://docs.astral.sh/uv/#__tabbed_1_1)
-- 🐳 Full Docker Support (Backend, Frontend, and Postgres)
+- 🐳 **Docker Support** Backend, Frontend, and Postgres
 
 ---
 
@@ -67,6 +67,7 @@ your_friend/
 ### 1️⃣ Create virtual environment
 
 ```bash
+cd app
 uv venv
 ```
 
@@ -94,8 +95,11 @@ cp .env.example .env
 Then fill in your configuration:
 
 ```.env
-DATABASE_URL=postgresql://username:password@localhost:5432/your_friend
-SECRET_KEY=your_secret_key # Random string (get from uuid.uuid4() PYTHON)
+POSTGRES_DB=your_postgres_db
+POSTGRES_USER=your_postgres_user
+POSTGRES_PASSWORD=your_postgres_password
+
+SECRET_KEY=your_secret_key # get one from python: uuid.uuid4()
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=15
 REFRESH_TOKEN_EXPIRE_DAYS=30
@@ -104,7 +108,7 @@ GROQ_API_KEY=your_groq_api_key
 
 5️⃣ Run the FastAPI server
 ```bash
-uv run uvicorn app.main:app --reload
+uv run uvicorn main:app --reload
 ```
 
 Server runs at:
@@ -155,7 +159,7 @@ docker compose down
 
 | Service      | Description           | Port |
 | ------------ | --------------------- | ---- |
-| **db**       | PostgreSQL database   | 5431 |
+| **db**       | PostgreSQL database   | 5432 |
 | **backend**  | FastAPI server        | 8000 |
 | **frontend** | React + Vite frontend | 5173 |
 
@@ -170,7 +174,7 @@ docker compose down
 | **AI Engine**          | LangChain, ChromaDB           |
 | **Auth**               | JWT (Access + Refresh Tokens) |
 | **Dependency Manager** | uv                            |
-| **Vector Store**       | ChromaDB                      |
+
 
 
 ## License
