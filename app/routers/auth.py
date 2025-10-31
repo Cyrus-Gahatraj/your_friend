@@ -19,7 +19,7 @@ def user_login(user_credentials: OAuth2PasswordRequestForm = Depends(), db: Sess
         models.User.email == user_credentials.username ).first()
     
     if not user:
-        return HTTPException(
+        raise HTTPException( 
             status_code = status.HTTP_403_FORBIDDEN,
             detail='Invalid credential.'
         )

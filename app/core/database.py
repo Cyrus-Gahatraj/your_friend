@@ -15,9 +15,11 @@ def get_database_url():
         postgres_user = os.getenv('POSTGRES_USER')
         postgres_password = os.getenv('POSTGRES_PASSWORD')
         postgres_db = os.getenv('POSTGRES_DB')
-        host = 'localhost'
+        postgres_host = os.getenv("POSTGRES_HOST", "localhost")
+        if os.getenv("DOCKER_ENV", "false").lower() == "true":
+            postgres_host = "db"
         port = 5432
-        db_url = f'postgresql://{postgres_user}:{postgres_password}@{host}:{port}/{postgres_db}'
+        db_url = f'postgresql://{postgres_user}:{postgres_password}@{postgres_host}:{port}/{postgres_db}'
         return db_url
     except ImportError:
         raise ValueError('dotenv is not available.')

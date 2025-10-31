@@ -15,6 +15,7 @@ It’s built using **FastAPI**, **React**, **PostgreSQL**, **ChromaDB**, and **L
 - ⚡ **FastAPI Backend** with endpoints for auth, ai, and user
 - 🧩 **Vector-based Memory** for responses
 - 🧰 **Modern Dependency Management** using [uv](https://docs.astral.sh/uv/#__tabbed_1_1)
+- 🐳 Full Docker Support (Backend, Frontend, and Postgres)
 
 ---
 
@@ -23,27 +24,28 @@ It’s built using **FastAPI**, **React**, **PostgreSQL**, **ChromaDB**, and **L
 ```
 your_friend/
 │
-├── app/ # Backend FastAPI application
-│ ├── core/ # Config, database, utils
-│ ├── models/ # SQLAlchemy ORM models
-│ ├── routers/ # API routes (auth, ai, users, etc.)
-│ ├── schemas/ # Pydantic schemas
-│ ├── personas/ # JSON of Personas (Alice, Ethan, Sora, etc)
-│ └── main.py # FastAPI entry point
+├── app/                      # Backend: FastAPI
+│   ├── core/                 
+│   ├── models/              
+│   ├── routers/              
+│   ├── schemas/             
+│   ├── personas/             # JSON of Personas (Alice, Ethan, Sora, etc.)
+│   ├── pyproject.toml        
+│   ├── uv.lock               
+│   └── main.py               # FastAPI entry point
 │
-├── frontend/ # React + Vite frontend
-│ ├── src/
-│ │ ├── components/ # Reusable UI components
-│ │ ├── data/ # A single JSON file that holds all personas
-│ │ ├── pages/ # App pages (Login, Signup, Dashboard)
-│ │ ├── context/ # Auth context
-│ │ ├── modals/ # Login-in/Signup modals
-│ │ └── api.js # Axios setup
-│ └── package.json
+├── frontend/                 # Frontend{} React + Vite 
+│   ├── src/
+│   │   ├── components/       
+│   │   ├── data/             # A single JSON file that holds all personas
+│   │   ├── pages/            
+│   │   ├── context/          
+│   │   ├── modals/           
+│   │   └── api.js           
+│   └── package.json
 │
-├── .env # Environment variables
-├── pyproject.toml # Backend dependencies (uv)
-├── uv.lock # Lock file
+├── docker-compose.yml        # Docker compose setup
+├── .env                      # Environment variables
 ├── LICENSE
 └── README.md
 ```
@@ -131,6 +133,32 @@ Frontend runs at:
 ```
 ➡️ http://localhost:5173
 ```
+
+## 🐳 Docker Setup
+
+1️⃣ Build and run all services:
+```bash
+docker compose up --build
+```
+
+2️⃣ Run in detached mode:
+```bash
+docker compose up -d
+```
+
+3️⃣ Stop all services:
+```bash
+docker compose down
+```
+
+## Docker Services
+
+| Service      | Description           | Port |
+| ------------ | --------------------- | ---- |
+| **db**       | PostgreSQL database   | 5431 |
+| **backend**  | FastAPI server        | 8000 |
+| **frontend** | React + Vite frontend | 5173 |
+
 
 ## 🧰 Tech Stack
 
