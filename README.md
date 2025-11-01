@@ -40,12 +40,15 @@ your_friend/
 │   │   ├── data/             # A single JSON file that holds all personas
 │   │   ├── pages/            
 │   │   ├── context/          
-│   │   ├── modals/           
-│   │   └── api.js           
+│   │   ├── modals/ 
+│   │   ├── App.jsx    
+│   │   ├── main.jsx         
+│   │   └── api.jsx
+│   ├── bun.lock      
 │   └── package.json
 │
 ├── docker-compose.yml        # Docker compose setup
-├── .env                      # Environment variables
+├── .env.example              # Environment variables
 ├── LICENSE
 └── README.md
 ```
@@ -55,9 +58,9 @@ your_friend/
 ## ⚙️ Requirements
 
 - Python 3.12+
-- Node.js 18+
 - PostgreSQL 14+
 - [uv](https://github.com/astral-sh/uv) - Fast Python package manager
+- [bun](https://bun.com/) - Javascript runtime & package manager
 - ChromaDB 
 
 ---
@@ -94,7 +97,7 @@ cp .env.example .env
 
 Then fill in your configuration:
 
-```.env
+```env
 POSTGRES_DB=your_postgres_db
 POSTGRES_USER=your_postgres_user
 POSTGRES_PASSWORD=your_postgres_password
@@ -125,12 +128,12 @@ cd frontend
 
 2️⃣ Install dependencies
 ```bash
-npm install
+bun install
 ```
 
 3️⃣ Run development server
 ```bash
-npm run dev
+bun run dev
 ```
 
 Frontend runs at:
@@ -173,7 +176,7 @@ docker compose down
 | **Database**           | PostgreSQL                    |
 | **AI Engine**          | LangChain, ChromaDB           |
 | **Auth**               | JWT (Access + Refresh Tokens) |
-| **Dependency Manager** | uv                            |
+| **Package Manager**    | uv, bun                       |
 
 
 

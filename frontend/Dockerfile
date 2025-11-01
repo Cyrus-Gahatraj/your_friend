@@ -1,7 +1,7 @@
-FROM node:22.21.1-alpine3.21
+FROM oven/bun:1.3.1-alpine
 WORKDIR /frontend
-COPY package*.json ./
-RUN npm install
+COPY package.json bun.lock ./
+RUN bun install
 COPY . .
 EXPOSE 5173
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+CMD ["bun", "run", "dev", "--", "--host", "0.0.0.0"]
