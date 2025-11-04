@@ -4,8 +4,13 @@ from langchain_core.messages import BaseMessage, AIMessage, HumanMessage
 from models import models
 from sqlalchemy.orm import Session
 
-def get_session_history(session_id: str, db: Session, user_id: int, ai_user_id: int) -> "DBChatMessageHistory":
-    return DBChatMessageHistory(session_id=session_id, db=db, user_id=user_id, ai_user_id=ai_user_id)
+
+def get_session_history(
+    session_id: str, db: Session, user_id: int, ai_user_id: int
+) -> "DBChatMessageHistory":
+    return DBChatMessageHistory(
+        session_id=session_id, db=db, user_id=user_id, ai_user_id=ai_user_id
+    )
 
 class DBChatMessageHistory(BaseChatMessageHistory):
     def __init__(self, session_id: str, db: Session, user_id: int, ai_user_id: int):
@@ -21,17 +26,27 @@ class DBChatMessageHistory(BaseChatMessageHistory):
             self.db.query(models.Message)
             .filter(
                 (
-                    (models.Message.sender_id == self.user_id) & (models.Message.receiver_id == self.ai_user_id)
-                ) | (
-                    (models.Message.sender_id == self.ai_user_id) & (models.Message.receiver_id == self.user_id)
+                    (models.Message.sender_id == self.user_id)
+                    & (models.Message.receiver_id == self.ai_user_id)
+                )
+                | (
+                    (models.Message.sender_id == self.ai_user_id)
+                    & (models.Message.receiver_id == self.user_id)
                 )
             )
             .order_by(models.Message.timestamp.asc())
             .all()
         )
 
-        result = []
+        filtered_messages = []
         for msg in db_messages:
+            # If message has session_id metadata, only include if it matches
+            if msg.meta_data and isinstance(msg.meta_data, dict):
+                if msg.meta_data.get("session_id") == self.session_id:
+                    filtered_messages.append(msg)
+                    
+        result = []
+        for msg in filtered_messages:
             if msg.is_ai:
                 result.append(AIMessage(content=msg.content, id=str(msg.id)))
             else:
@@ -56,21 +71,30 @@ class DBChatMessageHistory(BaseChatMessageHistory):
             receiver_id=receiver_id,
             content=message.content,
             is_ai=is_ai,
+            meta_data={"session_id": self.session_id}
         )
         self.db.add(db_message)
         self.db.commit()
 
     def clear(self) -> None:
         """Clear all messages from the database for this session."""
-        (
+        messages_to_delete = (
             self.db.query(models.Message)
             .filter(
                 (
-                    (models.Message.sender_id == self.user_id) & (models.Message.receiver_id == self.ai_user_id)
-                ) | (
-                    (models.Message.sender_id == self.ai_user_id) & (models.Message.receiver_id == self.user_id)
+                    (models.Message.sender_id == self.user_id)
+                    & (models.Message.receiver_id == self.ai_user_id)
+                )
+                | (
+                    (models.Message.sender_id == self.ai_user_id)
+                    & (models.Message.receiver_id == self.user_id)
                 )
             )
-            .delete()
+            .all()
         )
+        for msg in messages_to_delete:
+            if msg.meta_data and isinstance(msg.meta_data, dict):
+                if msg.meta_data.get("session_id") == self.session_id:
+                    self.db.delete(msg)
+                    
         self.db.commit()

@@ -1,4 +1,14 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Enum, ForeignKey, JSON, Text
+from sqlalchemy import (
+    Column,
+    Integer,
+    String,
+    DateTime,
+    Boolean,
+    Enum,
+    ForeignKey,
+    JSON,
+    Text,
+)
 from sqlalchemy.orm import relationship
 from datetime import datetime
 import enum
@@ -26,10 +36,18 @@ class User(Base):
     last_login = Column(DateTime, default=datetime.utcnow)
     is_active = Column(Boolean, default=True)
 
-    messages_sent = relationship("Message", foreign_keys="[Message.sender_id]", back_populates="sender")
-    messages_received = relationship("Message", foreign_keys="[Message.receiver_id]", back_populates="receiver")
+    messages_sent = relationship(
+        "Message", foreign_keys="[Message.sender_id]", back_populates="sender"
+    )
+    messages_received = relationship(
+        "Message", foreign_keys="[Message.receiver_id]", back_populates="receiver"
+    )
 
-    relationships = relationship("Relationship", foreign_keys="[Relationship.user_id]", back_populates="user")
+    relationships = relationship(
+        "Relationship", foreign_keys="[Relationship.user_id]", back_populates="user"
+    )
+    custom_personas = relationship("CustomPersona", back_populates="user")
+
 
 class Relationship(Base):
     __tablename__ = "relationships"
@@ -39,7 +57,7 @@ class Relationship(Base):
     friend_id = Column(Integer, ForeignKey("users.id"))
     type = Column(Enum(RelationshipType))
     status = Column(Enum(RelationshipStatus), default=RelationshipStatus.pending)
-    ai_persona = Column(String, default="default_ai") 
+    ai_persona = Column(String, default="default_ai")
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", foreign_keys=[user_id], back_populates="relationships")
@@ -58,5 +76,26 @@ class Message(Base):
     is_ai = Column(Boolean, default=False)
     meta_data = Column(JSON, nullable=True)
 
-    sender = relationship("User", foreign_keys=[sender_id], back_populates="messages_sent")
-    receiver = relationship("User", foreign_keys=[receiver_id], back_populates="messages_received")
+    sender = relationship(
+        "User", foreign_keys=[sender_id], back_populates="messages_sent"
+    )
+    receiver = relationship(
+        "User", foreign_keys=[receiver_id], back_populates="messages_received"
+    )
+
+
+class CustomPersona(Base):
+    __tablename__ = "custom_personas"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String, nullable=False)
+    system_prompt = Column(Text, nullable=False)
+    example_messages = Column(JSON, nullable=True)
+    avatar_url = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="custom_personas")

@@ -1,1 +1,91 @@
 @import "tailwindcss";
+
+/* ─── Scrollbar ──────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fafafa; /* near-white */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d4d4d4; /* medium gray */
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a3a3a3; /* darker gray on hover */
+}
+
+/* ─── Buttons ───────────────────────────────── */
+.btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-300
+         focus:outline-none focus:ring-2 focus:ring-offset-2;
+}
+
+.btn-primary {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-300
+         focus:outline-none focus:ring-2 focus:ring-offset-2
+         bg-black text-white hover:bg-gray-900 focus:ring-gray-700;
+}
+
+.btn-secondary {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-300
+         focus:outline-none focus:ring-2 focus:ring-offset-2
+         bg-white text-gray-800 border border-gray-300 hover:bg-gray-100;
+}
+
+.btn-danger {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-300
+         focus:outline-none focus:ring-2 focus:ring-offset-2
+         bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 ;
+}
+
+/* ─── Inputs ───────────────────────────────── */
+.input {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg 
+         focus:outline-none focus:ring-2 focus:ring-gray-800 
+         focus:border-transparent transition-all duration-200 bg-white text-gray-900;
+}
+
+/* ─── Cards ────────────────────────────────── */
+.card {
+  @apply bg-white rounded-xl shadow-sm border border-gray-200 
+         hover:shadow-md transition-shadow duration-200;
+}
+
+.card-elevated {
+  @apply bg-white rounded-xl shadow-lg border border-gray-100 
+         hover:shadow-xl transition-shadow duration-200;
+}
+
+/* ─── Avatars ──────────────────────────────── */
+.avatar {
+  @apply rounded-full object-cover border border-gray-200 shadow-sm;
+}
+
+/* ─── Message Bubbles ───────────────────────── */
+.message-bubble {
+  @apply px-4 py-3 rounded-2xl max-w-xs shadow-sm;
+  word-wrap: break-word;
+}
+
+.message-bubble-user {
+  @apply bg-black text-white shadow-md;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.message-bubble-ai {
+  @apply bg-gray-50 text-gray-900 border border-gray-200;
+  border-bottom-left-radius: 0.5rem;
+}
+
+/* ─── Hover Lift Effect ─────────────────────── */
+.hover-lift {
+  @apply transition-transform duration-200 ease-out;
+}
+
+.hover-lift:hover {
+  @apply -translate-y-1 shadow-lg;
+}
